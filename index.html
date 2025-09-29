@@ -3,272 +3,162 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Новости</title>
+  <title>Новостная лента</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-
     body {
-      font-family: 'Inter', sans-serif;
       margin: 0;
-      background: #eef2f7;
-      color: #333;
-      overflow-x: hidden;
-    }
-
-    h1 {
-      text-align: center;
-      margin: 30px 0 15px;
-      color: #222;
-      font-weight: 700;
-      font-size: 2.5rem;
-    }
-
-    #news-container {
-      max-width: 900px;
-      margin: 0 auto 40px;
-      padding: 0 15px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-    }
-
-    .news-item {
-      background: #fff;
-      border-radius: 15px;
-      overflow: hidden;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #fff;
+      color: #111;
       display: flex;
       flex-direction: column;
-      transition: transform 0.3s ease;
-    }
-
-    .news-item:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
-    }
-
-    .news-image {
-      width: 100%;
-      height: 160px;
-      object-fit: cover;
-      background: #ddd;
-    }
-
-    .news-content {
-      padding: 15px 20px 20px;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .news-title {
-      font-size: 1.1rem;
-      margin: 0 0 10px;
-      font-weight: 700;
-      color: #222;
-      line-height: 1.25;
-      flex-grow: 1;
-    }
-
-    .news-date {
-      font-size: 0.85rem;
-      color: #777;
-      margin-top: auto;
-      text-align: right;
-    }
-
-    /* Модальное окно (подробности новости) */
-    #modal {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.75);
-      display: flex;
-      justify-content: center;
       align-items: center;
-      visibility: hidden;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-      z-index: 1000;
+      min-height: 100vh;
       padding: 20px;
-      overflow-y: auto;
+      box-sizing: border-box;
     }
-
-    #modal.show {
-      visibility: visible;
-      opacity: 1;
+    h1 {
+      margin-bottom: 20px;
+      font-weight: 700;
     }
-
-    #modal-content {
-      background: #fff;
-      border-radius: 20px;
-      max-width: 800px;
+    #news-form {
       width: 100%;
-      max-height: 90vh;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-      position: relative;
-      overflow: hidden;
+      max-width: 600px;
+      background: #f2f2f2;
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.05);
+    }
+    #news-form input[type="text"],
+    #news-form input[type="url"] {
+      width: calc(100% - 24px);
+      padding: 10px;
+      margin-bottom: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    #news-form button {
+      background-color: #111;
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+      width: 100%;
+    }
+    #news-form button:hover {
+      background-color: #333;
+    }
+    #news-container {
       display: flex;
       flex-direction: column;
-      animation: fadeInScale 0.4s ease;
-    }
-
-    @keyframes fadeInScale {
-      from {opacity: 0; transform: scale(0.9);}
-      to {opacity: 1; transform: scale(1);}
-    }
-
-    #modal-close {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: transparent;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #999;
-      transition: color 0.3s ease;
-    }
-
-    #modal-close:hover {
-      color: #333;
-    }
-
-    #modal-image {
+      gap: 18px;
       width: 100%;
-      max-height: 350px;
+      max-width: 700px;
+    }
+    .news-item {
+      display: flex;
+      flex-direction: row;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .news-item:hover {
+      transform: scale(1.03);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.15);
+    }
+    .news-image {
+      flex-shrink: 0;
+      width: 160px;
+      height: 120px;
       object-fit: cover;
+      border-top-left-radius: 18px;
+      border-bottom-left-radius: 18px;
       background: #ddd;
-      border-radius: 20px 20px 0 0;
     }
-
-    #modal-title {
-      margin: 20px;
-      font-weight: 700;
-      font-size: 1.8rem;
-      color: #222;
-    }
-
-    #modal-description {
-      margin: 0 20px 20px;
-      font-size: 1rem;
-      color: #444;
-      line-height: 1.5;
-      overflow-y: auto;
+    .news-content {
+      padding: 15px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       flex-grow: 1;
     }
-
-    /* Стили для ссылок внутри описания */
-    #modal-description a {
-      color: #2980b9;
-      text-decoration: none;
-    }
-    #modal-description a:hover {
-      text-decoration: underline;
+    .news-title {
+      font-weight: 700;
+      font-size: 20px;
+      margin: 0 0 8px 0;
+      color: #111;
+      user-select: none;
     }
   </style>
 </head>
 <body>
-  <h1>Свежие Новости</h1>
-  <div id="news-container">Загрузка новостей...</div>
-
-  <div id="modal">
-    <div id="modal-content">
-      <button id="modal-close" title="Закрыть">&times;</button>
-      <img id="modal-image" src="" alt="Изображение новости" />
-      <h2 id="modal-title"></h2>
-      <div id="modal-description"></div>
-    </div>
-  </div>
+  <h1>Новостная лента пользователей</h1>
+  <form id="news-form" autocomplete="off">
+    <input type="text" id="title-input" placeholder="Заголовок новости" required />
+    <input type="url" id="image-input" placeholder="URL фото обложки" required />
+    <button type="submit">Добавить новость</button>
+  </form>
+  <div id="news-container"></div>
 
   <script>
-    async function loadRSS() {
-      const proxyUrl = 'https://api.allorigins.win/get?url=';
-      const rssUrl = encodeURIComponent('http://feeds.bbci.co.uk/news/rss.xml');
+    const newsContainer = document.getElementById('news-container');
+    const newsForm = document.getElementById('news-form');
+    const titleInput = document.getElementById('title-input');
+    const imageInput = document.getElementById('image-input');
 
-      try {
-        const response = await fetch(proxyUrl + rssUrl);
-        const data = await response.json();
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(data.contents, 'text/xml');
+    // Добавить новость в ленту
+    function addNewsItem(title, imageUrl) {
+      const newsItem = document.createElement('div');
+      newsItem.className = 'news-item';
 
-        const items = xml.querySelectorAll('item');
-        const container = document.getElementById('news-container');
-        container.innerHTML = '';
+      const img = document.createElement('img');
+      img.className = 'news-image';
+      img.src = imageUrl;
+      img.alt = title;
 
-        items.forEach((item, index) => {
-          if (index >= 10) return;
+      const content = document.createElement('div');
+      content.className = 'news-content';
 
-          const title = item.querySelector('title').textContent;
-          const link = item.querySelector('link').textContent;
-          const pubDate = new Date(item.querySelector('pubDate').textContent).toLocaleString('ru-RU');
-          const description = item.querySelector('description') ? item.querySelector('description').textContent : '';
-          const mediaContent = item.getElementsByTagName('media:thumbnail')[0] || item.getElementsByTagName('media:content')[0];
-          const imageUrl = mediaContent ? mediaContent.getAttribute('url') : '';
+      const newsTitle = document.createElement('h3');
+      newsTitle.className = 'news-title';
+      newsTitle.textContent = title;
 
-          // Создаём карточку новости
-          const newsDiv = document.createElement('div');
-          newsDiv.classList.add('news-item');
-          newsDiv.tabIndex = 0; // для доступности
+      content.appendChild(newsTitle);
+      newsItem.appendChild(img);
+      newsItem.appendChild(content);
 
-          newsDiv.innerHTML = `
-            <img class="news-image" src="${imageUrl || 'https://via.placeholder.com/400x160?text=No+Image'}" alt="Изображение новости" />
-            <div class="news-content">
-              <h3 class="news-title">${title}</h3>
-              <div class="news-date">${pubDate}</div>
-            </div>
-          `;
+      // Плавное появление новости
+      newsItem.style.opacity = '0';
+      newsContainer.prepend(newsItem);
+      setTimeout(() => {
+        newsItem.style.transition = 'opacity 0.5s ease';
+        newsItem.style.opacity = '1';
+      }, 10);
+    }
 
-          // Обработчик клика - открыть модалку с подробностями
-          newsDiv.addEventListener('click', () => showModal({title, imageUrl, description, link}));
-          newsDiv.addEventListener('keypress', e => {
-            if (e.key === 'Enter') showModal({title, imageUrl, description, link});
-          });
-
-          container.appendChild(newsDiv);
-        });
-      } catch (error) {
-        const container = document.getElementById('news-container');
-        container.innerText = 'Ошибка загрузки новостей.';
-        console.error(error);
+    // Обработка отправки формы добавления новости
+    newsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = titleInput.value.trim();
+      const imageUrl = imageInput.value.trim();
+      if (title && imageUrl) {
+        addNewsItem(title, imageUrl);
+        titleInput.value = '';
+        imageInput.value = '';
       }
-    }
-
-    // Функция отображения модального окна с новостью
-    function showModal({title, imageUrl, description, link}) {
-      const modal = document.getElementById('modal');
-      const modalImage = document.getElementById('modal-image');
-      const modalTitle = document.getElementById('modal-title');
-      const modalDescription = document.getElementById('modal-description');
-
-      modalImage.src = imageUrl || 'https://via.placeholder.com/800x350?text=No+Image';
-      modalTitle.textContent = title;
-
-      // В описании оставляем ссылку на источник, если она есть
-      modalDescription.innerHTML = `
-        ${description}
-        <p style="margin-top: 15px;"><a href="${link}" target="_blank" rel="noopener noreferrer">Читать полностью на источнике</a></p>
-      `;
-
-      modal.classList.add('show');
-      document.body.style.overflow = 'hidden'; // отключаем скролл фона
-    }
-
-    // Функция закрытия модального окна
-    function closeModal() {
-      const modal = document.getElementById('modal');
-      modal.classList.remove('show');
-      document.body.style.overflow = ''; // включаем скролл назад
-    }
-
-    // Обработчик кнопки закрытия и клика по фону
-    document.getElementById('modal-close').addEventListener('click', closeModal);
-    document.getElementById('modal').addEventListener('click', e => {
-      if (e.target === e.currentTarget) closeModal();
     });
 
-    loadRSS();
   </script>
 </body>
 </html>
+
