@@ -2,163 +2,58 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Новостная лента</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Сайт в разработке</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #fff;
-      color: #111;
+      height: 100vh;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+      font-family: 'Montserrat', sans-serif;
+      color: #333;
+      text-align: center;
       padding: 20px;
       box-sizing: border-box;
     }
-    h1 {
-      margin-bottom: 20px;
-      font-weight: 700;
-    }
-    #news-form {
-      width: 100%;
-      max-width: 600px;
-      background: #f2f2f2;
-      border-radius: 12px;
-      padding: 15px 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.05);
-    }
-    #news-form input[type="text"],
-    #news-form input[type="url"] {
-      width: calc(100% - 24px);
-      padding: 10px;
-      margin-bottom: 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    #news-form button {
-      background-color: #111;
-      color: #fff;
-      font-weight: 600;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.3s ease;
-      width: 100%;
-    }
-    #news-form button:hover {
-      background-color: #333;
-    }
-    #news-container {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      width: 100%;
-      max-width: 700px;
-    }
-    .news-item {
-      display: flex;
-      flex-direction: row;
+
+    .container {
       background: #fff;
-      border-radius: 18px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      padding: 40px 60px;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+      max-width: 480px;
     }
-    .news-item:hover {
-      transform: scale(1.03);
-      box-shadow: 0 8px 22px rgba(0,0,0,0.15);
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      color: #5a5a5a;
     }
-    .news-image {
-      flex-shrink: 0;
-      width: 160px;
-      height: 120px;
-      object-fit: cover;
-      border-top-left-radius: 18px;
-      border-bottom-left-radius: 18px;
-      background: #ddd;
+
+    p {
+      font-size: 1.2rem;
+      color: #777;
+      line-height: 1.6;
     }
-    .news-content {
-      padding: 15px 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      flex-grow: 1;
-    }
-    .news-title {
-      font-weight: 700;
-      font-size: 20px;
-      margin: 0 0 8px 0;
-      color: #111;
-      user-select: none;
+
+    .emoji {
+      font-size: 3rem;
+      margin-bottom: 15px;
     }
   </style>
 </head>
 <body>
-  <h1>Новостная лента пользователей</h1>
-  <form id="news-form" autocomplete="off">
-    <input type="text" id="title-input" placeholder="Заголовок новости" required />
-    <input type="url" id="image-input" placeholder="URL фото обложки" required />
-    <button type="submit">Добавить новость</button>
-  </form>
-  <div id="news-container"></div>
-
-  <script>
-    const newsContainer = document.getElementById('news-container');
-    const newsForm = document.getElementById('news-form');
-    const titleInput = document.getElementById('title-input');
-    const imageInput = document.getElementById('image-input');
-
-    // Добавить новость в ленту
-    function addNewsItem(title, imageUrl) {
-      const newsItem = document.createElement('div');
-      newsItem.className = 'news-item';
-
-      const img = document.createElement('img');
-      img.className = 'news-image';
-      img.src = imageUrl;
-      img.alt = title;
-
-      const content = document.createElement('div');
-      content.className = 'news-content';
-
-      const newsTitle = document.createElement('h3');
-      newsTitle.className = 'news-title';
-      newsTitle.textContent = title;
-
-      content.appendChild(newsTitle);
-      newsItem.appendChild(img);
-      newsItem.appendChild(content);
-
-      // Плавное появление новости
-      newsItem.style.opacity = '0';
-      newsContainer.prepend(newsItem);
-      setTimeout(() => {
-        newsItem.style.transition = 'opacity 0.5s ease';
-        newsItem.style.opacity = '1';
-      }, 10);
-    }
-
-    // Обработка отправки формы добавления новости
-    newsForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const title = titleInput.value.trim();
-      const imageUrl = imageInput.value.trim();
-      if (title && imageUrl) {
-        addNewsItem(title, imageUrl);
-        titleInput.value = '';
-        imageInput.value = '';
-      }
-    });
-
-  </script>
+  <div class="container">
+    <div class="emoji">🔧</div>
+    <h1>Спасибо за посещение!</h1>
+    <p>Наш сайт сейчас находится в доработке для вашего комфортного и приятного использования. Пожалуйста, заходите немного позже — мы готовим для вас что-то особенное!</p>
+  </div>
 </body>
 </html>
+
 
