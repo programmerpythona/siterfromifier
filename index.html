@@ -1,715 +1,510 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru" class="h-full">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pixel Strategy Game</title>
-  <!-- Web App Manifest (PWA) embedded as data URI -->
-  <link rel="manifest" href='data:application/manifest+json,{"name":"Pixel Strategy","short_name":"PixelStrat","description":"Retro pixel-art strategy game","start_url":".","display":"standalone","background_color":"#000000","theme_color":"#000000","icons":[{"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAIAAABoJHXvAAADF0lEQVR4nO3dQY7bMBBE0XLuf2dnQSAIECSxJbK7qvX/emDRfJyBx6JAiYiIiIiIiIiIiIiIiIiIiIiIgooff73T2Eaf0499JL61FmBW/2FNjvQ3+IWc0CPQL256DHm5Ut0P1gfxvuYLPKBboZ7N8DHWlWvEB3gn0yxGFm9Qt0G9jngxtj1rJAt4G9Xq/Pf3iAWdcC3fkn8TlmXw3+q2n5b5s/dDzBrFFLJz7Wzzbr1dKhf5ynmrVr6dxXU/PMHLR09MvfSWYmWjoKpilmPlo6DaZ8MystFYAp2cxNSzVgyjQz1FIZmNLMPLVUCaYcM1stFYMpwcxZS/Vg8jYz11ILmFzN/LXUBSY/swgtNYLJySxFS71g8jAL0lI7mLrNsrTkAKY+szgtmYCpwyxRSz5gqjUL1ZIVmKrMcrXkBqbzZtFaMgTTSbN0LXmC6YzZAC3Zgmm32QwtOYNpn9kYLZmDaYfZJC35g+me2TAtRYDpqtk8LUkZo1ydu8OSoqWU37DVoWkN0lIWmA5MbpaW4sC0dYrjtJQIpk0TnailUDDdnu5QLeWC6cak52opGkyXpj5aS+lgDywb7PQNTMOCwWq2CLiVCla5CceqSLD6bW4+5YF1bSQ1KQysd6u2Q0lgDg9DtBcD9u3dSIfnYk6UAXbt3vFIswCwO3f655m5g93flzHMzBps1y6aSWa+YHv3PI0xMwU7sUNthpkj2Ln9hAPM7MBO7/5MN/MCq9mrG21mBFa5szrXzAWsfh98qJkFWNdTC4lm/WC9z5jEmTWDOTwRlGXWCeagdeHFe83awHy0Llyi0awHzE3rwoW6zBrAPLUuXK7FrBrMWevCRevNSsH8tS5cutisDixF68IAKs2KwLK0Vp5mFWCJWitDs+NguVorN7OzYOlaKyuzg2AztFY+ZremadfIzLV+5fB++2+vpGjJY6hJR3k41D7gmMNyfHroYTmhWqvHHUcVrbV60IFvA7RWjzhScYzW6hGHltKdAAsLsLAACwuwsAALC7CwAAsLMCIiIiIiIiIiIiIiIiIiIiKim/0EICDspLdOrq0AAAAASUVORK5CYII=","sizes":"144x144","type":"image/png"}]}'>
-  <style>
-    /* Reset some default margins/padding for a clean layout */
-    body {
-      margin: 0;
-      background: #111;  /* dark background to frame the game */
-      color: #eee;
-      font-family: monospace;
-    }
-    /* Container for the game HUD and canvas */
-    #gameContainer {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 5px;
-    }
-    /* Turn indicator and log section */
-    #infoBar {
-      width: 100%;
-      max-width: 500px;
-      margin-bottom: 5px;
-      font-size: 1rem;
-    }
-    #turnIndicator {
-      font-weight: bold;
-      margin-bottom: 3px;
-    }
-    /* Event log styling */
-    #log {
-      font-size: 0.8rem;
-      height: 4em;
-      overflow-y: auto;
-      background: #222;
-      border: 1px solid #444;
-      padding: 2px;
-    }
-    #log p {
-      margin: 0;
-      line-height: 1.2;
-    }
-    /* Canvas styles: scaled up and pixelated */
-    #gameCanvas {
-      /* Set initial size based on pixel grid, we'll scale it up */
-      width: 100%;  /* make it responsive: fill container width */
-      max-width: 500px;
-      height: auto;
-      image-rendering: pixelated;       /* crisp upscaled pixels */
-      image-rendering: crisp-edges;
-      border: 2px solid #555;
-      touch-action: none;  /* prevent scrolling on touch interactions on canvas */
-    }
-    /* Control buttons */
-    #controls {
-      margin-top: 5px;
-    }
-    #controls button {
-      background: #333;
-      color: #eee;
-      font-family: monospace;
-      font-size: 1rem;
-      border: 1px solid #555;
-      padding: 5px 8px;
-      margin: 0 3px;
-      cursor: pointer;
-    }
-    #controls button:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-    /* Highlight button on hover/focus for desktop accessibility */
-    #controls button:hover:enabled, #controls button:focus:enabled {
-      background: #555;
-    }
-  </style>
-</head>
-<body>
-<div id="gameContainer">
-  <!-- Info Bar with Turn Indicator and Event Log -->
-  <div id="infoBar">
-    <div id="turnIndicator">Turn 1: Player's turn</div>
-    <div id="log"></div>
-  </div>
-  <!-- Game Map Canvas -->
-  <canvas id="gameCanvas" width="13" height="10"></canvas>
-  <!-- Controls (dynamic action buttons and End Turn) -->
-  <div id="controls">
-    <button id="btnWar" style="display:none;">Declare War</button>
-    <button id="btnAlliance" style="display:none;">Offer Alliance</button>
-    <button id="btnPeace" style="display:none;">Offer Peace</button>
-    <button id="btnEnd">End Turn</button>
-  </div>
-</div>
-
-<script>
-/*
- Pixel-Art Strategy Game Script
- All game state and logic is implemented below.
-*/
-
-// Canvas and context
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-// Off-screen canvas for province id detection (same size as main canvas)
-const idCanvas = document.createElement('canvas');
-idCanvas.width = canvas.width;
-idCanvas.height = canvas.height;
-const idCtx = idCanvas.getContext('2d');
-
-// Game data structures
-const provinceData = {};  // data for each province by letter code
-const countries = [];     // list of country objects
-let relations = [];       // relations matrix [countryIndex][otherIndex] = 'neutral'/'war'/'ally'
-
-// Define province layout (letters) and neighbors
-// Provinces: A (Britain), B (Iberia), C (France - Player), D (Germany), E (Scandinavia), F (Italy), G (Balkans), H (Eastern Europe)
-const provinceCells = {
-  'A': [ [2,0],[2,1],[3,0],[3,1] ],                     // UK
-  'B': [ [8,0],[9,0],[9,1],[7,1],[7,2],[8,2] ],         // Iberia (Spain/Portugal)
-  'C': [ [5,2],[5,3],[6,2],[6,3] ],                     // France (Player)
-  'D': [ [4,4],[4,5],[4,6],[5,4],[5,5],[5,6],[6,5] ],   // Germany+Central Europe
-  'E': [ [0,7],[0,8],[1,6],[1,7],[2,6],[2,7],[3,5],[3,6] ], // Scandinavia (N. Europe)
-  'F': [ [7,5],[8,5],[8,6] ],                           // Italy
-  'G': [ [6,7],[7,7],[7,8],[8,7] ],                     // Balkans (SE Europe)
-  'H': [ [3,9],[3,10],[4,9],[4,10],[5,9],[5,10],[6,9],[6,10],[7,9],[7,10] ] // Eastern Europe (incl. West Russia)
-};
-// Neighbors (adjacency list) for each province letter
-const provinceNeighbors = {
-  'A': ['C'],        // Britain adjacent to France (via sea connection)
-  'B': ['C'],        // Iberia adjacent to France
-  'C': ['A','B','D','F'], // France neighbors: UK, Iberia, Germany, Italy
-  'D': ['C','E','F','G'], // Germany neighbors: France, Scandinavia, Italy, Balkans
-  'E': ['D'],        // Scandinavia neighbor: Germany
-  'F': ['C','D','G'],// Italy neighbors: France, Germany, Balkans
-  'G': ['D','F','H'],// Balkans neighbors: Germany, Italy, Eastern
-  'H': ['G']         // Eastern Europe neighbor: Balkans (we consider Scandinavia separated by Baltic Sea)
-};
-
-// Country setup: 0 = Player (France/C), 1 = Britain(A), 2 = Iberia(B), 3 = Germany(D), 4 = Scandinavia(E), 5 = Italy(F), 6 = Balkans(G), 7 = Russia(H)
-const countrySetup = [
-  { name: "Player", control: 'C' },      // Player controls France
-  { name: "Britain", control: 'A' },
-  { name: "Spain", control: 'B' },      // Iberia
-  { name: "Germany", control: 'D' },
-  { name: "Scandinavia", control: 'E' },
-  { name: "Italy", control: 'F' },
-  { name: "Balkans", control: 'G' },
-  { name: "Russia", control: 'H' }      // Eastern Europe region
-];
-
-// Initialize country objects and province ownership
-countrySetup.forEach((entry, idx) => {
-  countries[idx] = {
-    name: entry.name,
-    isAI: (idx !== 0),  // index 0 is player
-    provinces: [],      // will fill next
-  };
-});
-// Initialize province data and assign owners
-for (let code in provinceCells) {
-  // find which country owns this province initially
-  let ownerIdx = countrySetup.findIndex(c => c.control === code);
-  if (ownerIdx === -1) ownerIdx = null;
-  provinceData[code] = {
-    id: code,
-    owner: ownerIdx,
-    troops: 5,                // starting troops in province
-    neighbors: provinceNeighbors[code] || []
-  };
-  if (ownerIdx != null) {
-    countries[ownerIdx].provinces.push(code);
-  }
-}
-
-// Relations matrix initialization
-const N = countries.length;
-relations = Array.from({ length: N }, () => Array(N).fill("neutral"));
-for (let i = 0; i < N; i++) {
-  relations[i][i] = ""; // self-relations not used
-}
-// Initially, all countries are neutral with each other (no wars or alliances)
-
-// Map drawing colors: assign each country a distinct color for display
-const nationColors = [
-  "#2a7fff", // Player - blue
-  "#d04040", // Britain - red
-  "#d0d040", // Spain - yellow
-  "#40d040", // Germany - green
-  "#40c0d0", // Scandinavia - teal
-  "#d07f40", // Italy - orange-brown
-  "#c040d0", // Balkans - purple
-  "#8080a0"  // Russia - gray-blue
-];
-
-// Each province also gets a unique color in the idCanvas for hit detection
-// We'll use distinct solid RGB values for provinces (e.g., A=red, B=green, etc. with full intensity differences)
-const idColors = {
-  'A': { r:255, g:0,   b:0   },   // A = red
-  'B': { r:0,   g:255, b:0   },   // B = green
-  'C': { r:0,   g:0,   b:255 },   // C = blue
-  'D': { r:255, g:255, b:0   },   // D = yellow
-  'E': { r:255, g:0,   b:255 },   // E = magenta
-  'F': { r:0,   g:255, b:255 },   // F = cyan
-  'G': { r:128, g:0,   b:0   },   // G = dark red
-  'H': { r:0,   g:128, b:0   }    // H = dark green
-};
-
-// Draw the static id map on the off-screen canvas (each cell with province's id color)
-function drawIdMap() {
-  for (let code in provinceCells) {
-    const color = idColors[code];
-    idCtx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
-    provinceCells[code].forEach(cell => {
-      idCtx.fillRect(cell[1], cell[0], 1, 1); // note: cell = [row, col], canvas x=col, y=row
-    });
-  }
-}
-drawIdMap(); // prepare id map once at start
-
-// Draw the main map canvas based on current ownership of provinces
-function drawMap() {
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // Draw each province in color of its owner
-  for (let code in provinceCells) {
-    const owner = provinceData[code].owner;
-    // if province has no owner (shouldn't happen in this game), skip
-    if (owner === null) continue;
-    ctx.fillStyle = nationColors[owner];
-    provinceCells[code].forEach(cell => {
-      ctx.fillRect(cell[1], cell[0], 1, 1);
-    });
-    // Optionally, we could draw troop numbers or icons here.
-    // To keep pixel aesthetic, one approach: for each cell cluster, draw a small number near center.
-    // We'll implement a simple text draw of troops for visibility:
-    const troops = provinceData[code].troops;
-    if (troops !== null && troops >= 0) {
-      // Find a representative position (we'll use the first cell of the province for text placement for simplicity)
-      let textX = provinceCells[code][0][1];
-      let textY = provinceCells[code][0][0];
-      ctx.fillStyle = "#000"; // text shadow
-      ctx.fillText(String(troops), textX, textY+0.9); // slight offset down
-      ctx.fillStyle = "#fff";
-      ctx.fillText(String(troops), textX, textY+0.8);
-    }
-  }
-  // If a province is selected, draw an outline around its cells to highlight
-  if (selectedProvince) {
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 0.05;
-    provinceCells[selectedProvince].forEach(cell => {
-      ctx.strokeRect(cell[1] + 0.05, cell[0] + 0.05, 0.9, 0.9);
-    });
-  }
-}
-
-// Update the turn indicator text
-function updateTurnIndicator() {
-  const currentCountry = countries[currentTurn];
-  const turnText = `Turn ${turnCount}: ${currentCountry.name}${currentCountry.isAI ? "" : " (You)"}'s turn`;
-  document.getElementById('turnIndicator').textContent = turnText;
-}
-
-// Append a message to the event log
-function logEvent(msg) {
-  const logElem = document.getElementById('log');
-  const p = document.createElement('p');
-  p.textContent = msg;
-  logElem.appendChild(p);
-  logElem.scrollTop = logElem.scrollHeight; // scroll to bottom
-}
-
-// Game state variables
-let turnCount = 1;
-let currentTurn = 0; // index in countries array, 0 = player
-let selectedProvince = null; // currently selected province (code) by player
-let selectedEnemyProvince = null; // if player selects an enemy directly (for diplomacy)
-
-// Check victory or defeat conditions
-function checkEndGame() {
-  // Player defeat if player (index 0) has no provinces
-  if (countries[0].provinces.length === 0) {
-    alert("Game Over - You lost all your provinces!");
-    // In a full implementation, we'd offer restart or end the game loop.
-    return true;
-  }
-  // Victory if player controls all provinces or all other nations are eliminated
-  let playerProvCount = countries[0].provinces.length;
-  let totalProvCount = Object.keys(provinceData).length;
-  if (playerProvCount === totalProvCount) {
-    alert("Congratulations! You have conquered all of Europe!");
-    return true;
-  }
-  // Alternatively, check if only one country remains with any provinces
-  const remainingCountries = countries.filter(c => c.provinces.length > 0);
-  if (remainingCountries.length === 1) {
-    if (remainingCountries[0] === countries[0]) {
-      alert("Congratulations! You achieved total conquest!");
-    } else {
-      alert("Game Over - " + remainingCountries[0].name + " dominates Europe.");
-    }
-    return true;
-  }
-  return false;
-}
-
-// End the current turn and move to next
-function endTurn() {
-  // Increase turn count and advance to next country in sequence
-  currentTurn = (currentTurn + 1) % countries.length;
-  if (currentTurn === 0) {
-    turnCount++;
-  }
-  updateTurnIndicator();
-  // If next is AI, process AI actions
-  if (countries[currentTurn].isAI) {
-    processAITurn(currentTurn);
-  } else {
-    // If it's the human player's turn, enable their controls (this is handled inherently by event listeners)
-  }
-}
-
-// Process AI turn logic for country at index i
-function processAITurn(i) {
-  const ai = countries[i];
-  // Add troops to each province owned by AI (income per turn)
-  ai.provinces.forEach(pCode => {
-    provinceData[pCode].troops += 1; // simple growth: +1 troop per province
-  });
-  drawMap();
-
-  // If AI has no provinces (eliminated), just skip
-  if (ai.provinces.length === 0) {
-    // Immediately end this AI turn
-    maybeEndAITurn();
-    return;
-  }
-
-  // 1. Possibly declare war on a neighbor if none currently
-  let atWar = false;
-  for (let j = 0; j < countries.length; j++) {
-    if (relations[i][j] === 'war') { atWar = true; break; }
-  }
-  if (!atWar) {
-    // find potential neutral neighbors to attack
-    const possibleTargets = [];
-    ai.provinces.forEach(pCode => {
-      provinceData[pCode].neighbors.forEach(nCode => {
-        const targetOwner = provinceData[nCode].owner;
-        if (targetOwner != null && targetOwner !== i) {
-          // check relations
-          if (relations[i][targetOwner] === 'neutral') {
-            possibleTargets.push(targetOwner);
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Тёплая Серверная — уютные записи</title>
+  <meta name="description" content="Личный уютный сайт для текстовых записей как тёплые заметки." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>☕️</text></svg>">
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cozy: {
+              50: '#FFF7ED',   // теплее фон
+              100: '#FFEFD9',
+              200: '#FFE1B8',
+              300: '#FFD095',
+              400: '#FFBA6E',
+              500: '#F79C3E',  // акцент
+              600: '#E3842C',
+              700: '#C56A1F',
+              800: '#944E17',
+              900: '#5C2F0E'
+            }
+          },
+          boxShadow: {
+            cozy: '0 12px 48px -12px rgba(148, 78, 23, 0.25)'
+          },
+          keyframes: {
+            fadeUp: { '0%': { opacity: 0, transform:'translateY(8px)' }, '100%': { opacity:1, transform:'none' } },
+            pop: { '0%': { transform:'scale(.98)' }, '100%': { transform:'scale(1)' } },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' }
+            }
+          },
+          animation: {
+            fadeUp: 'fadeUp .35s ease-out both',
+            pop: 'pop .12s ease-out both',
+            shimmer: 'shimmer 1.5s linear infinite'
           }
         }
-      });
+      }
+    }
+  </script>
+  <style>
+    .ring-focus { box-shadow: 0 0 0 3px rgba(247,156,62,0.35); }
+    .prose p { margin: 0.75rem 0; line-height: 1.75; }
+    .prose h2 { font-weight: 700; margin-top: 1.25rem; font-size: 1.25rem; }
+    .prose h3 { font-weight: 600; margin-top: 1rem; }
+    .prose a { text-decoration: underline; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* Card hover */
+    .card { transition: transform .15s ease, box-shadow .2s ease; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 14px 40px -16px rgba(92,47,14,.35); }
+  </style>
+</head>
+<body class="h-full bg-cozy-50 text-stone-800 selection:bg-cozy-200 selection:text-stone-900">
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 backdrop-blur bg-cozy-50/85 border-b border-cozy-200">
+      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
+        <button id="homeBtn" class="shrink-0 rounded-2xl p-2 hover:bg-cozy-100" title="На главную">🏠</button>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Тёплая Серверная</h1>
+        <span class="ml-2 text-sm text-stone-600 hidden sm:inline">уютные записи о своём</span>
+        <div class="ml-auto flex items-center gap-2">
+          <button id="newPostBtn" class="rounded-2xl px-3 py-1.5 bg-cozy-500 text-white hover:bg-cozy-600 shadow-cozy" title="Новая запись">+ Новая</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="border-b border-cozy-200 bg-white/70 backdrop-blur">
+      <div class="max-w-3xl mx-auto px-4 py-2 flex gap-2 items-center">
+        <div class="relative flex-1 animate-fadeUp">
+          <input id="search" type="search" placeholder="Поиск по заголовку и тексту… (/)" class="w-full rounded-2xl border border-cozy-200 bg-white px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-cozy-300"/>
+          <span class="absolute right-3 top-2.5">🔎</span>
+        </div>
+        <button id="exportBtn" class="rounded-2xl px-3 py-1.5 border border-cozy-300 hover:bg-cozy-100" title="Экспорт JSON">Экспорт</button>
+        <label class="rounded-2xl px-3 py-1.5 border border-cozy-300 hover:bg-cozy-100 cursor-pointer" title="Импорт JSON">
+          Импорт
+          <input id="importInput" type="file" accept="application/json" class="hidden" />
+        </label>
+        <button id="backupBtn" class="rounded-2xl px-3 py-1.5 border border-cozy-300 hover:bg-cozy-100" title="Скачать резервную копию">Бэкап</button>
+        <button id="rssBtn" class="rounded-2xl px-3 py-1.5 border border-cozy-300 hover:bg-cozy-100" title="Сгенерировать RSS">RSS</button>
+      </div>
+    </div>
+
+    <!-- Tag Row -->
+    <div id="tagRow" class="max-w-3xl mx-auto px-4 pt-2 pb-1 flex gap-2 overflow-x-auto no-scrollbar"></div>
+
+    <!-- Main content -->
+    <main class="max-w-3xl mx-auto w-full px-4 py-6 flex-1">
+      <section id="listView" class="grid gap-4"></section>
+      <article id="postView" class="hidden"></article>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-cozy-200 bg-white/70">
+      <div class="max-w-3xl mx-auto px-4 py-6 text-sm text-stone-600 flex flex-wrap items-center gap-3">
+        <span>☕️ Сделано с теплом. </span>
+        <span id="persistInfo" class="opacity-70">Хранение офлайн: проверяем…</span>
+        <button id="aboutBtn" class="ml-auto underline hover:text-stone-900">Добавить приветствие</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Compose Dialog -->
+  <dialog id="compose" class="rounded-2xl w-[min(880px,92vw)] p-0 border-0 shadow-2xl">
+    <form method="dialog" class="bg-white rounded-2xl">
+      <div class="px-5 py-4 border-b border-stone-200 flex items-center gap-3">
+        <h2 class="text-lg font-semibold">Новая запись</h2>
+        <span class="ml-auto text-sm text-stone-500" id="autosaveInfo"></span>
+        <button type="button" id="closeCompose" class="rounded-xl px-3 py-1.5 hover:bg-stone-100">✕</button>
+      </div>
+      <div class="p-5 grid gap-3">
+        <input id="titleInput" class="rounded-xl border border-stone-300 px-3 py-2 focus:ring-2 focus:ring-cozy-300" placeholder="Заголовок (N — открыть)" />
+        <textarea id="contentInput" class="rounded-xl border border-stone-300 px-3 py-2 h-60 resize-y focus:ring-2 focus:ring-cozy-300" placeholder="Текст (поддерживает Markdown)"></textarea>
+        <input id="tagsInput" class="rounded-xl border border-stone-300 px-3 py-2 focus:ring-2 focus:ring-cozy-300" placeholder="Теги через запятую: дом, мысли, заметки" />
+        <p class="text-xs text-stone-500">Сочетания клавиш: ⌘/Ctrl+S — сохранить черновик, ⌘/Ctrl+Enter — опубликовать.</p>
+      </div>
+      <div class="px-5 py-4 border-t border-stone-200 flex items-center gap-2">
+        <button type="button" id="saveDraftBtn" class="rounded-xl px-3 py-1.5 border border-cozy-300 hover:bg-cozy-100">Сохранить черновик</button>
+        <button type="button" id="publishBtn" class="rounded-xl px-3 py-1.5 bg-cozy-500 text-white hover:bg-cozy-600">Опубликовать</button>
+        <button type="button" id="deleteDraftBtn" class="ml-auto text-stone-500 hover:text-red-600">Удалить черновик</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="postCardTpl">
+    <article class="card rounded-2xl bg-white border border-cozy-200 p-4 shadow-sm animate-fadeUp cursor-pointer">
+      <h3 class="font-semibold text-lg mb-1 line-clamp-1"></h3>
+      <p class="text-stone-600 text-sm mb-2 line-clamp-2"></p>
+      <div class="flex items-center gap-2 text-xs text-stone-500">
+        <time></time>
+        <div class="ml-auto flex gap-1"></div>
+      </div>
+    </article>
+  </template>
+
+  <script>
+  // --- Storage & Persistence ---
+  const THEME_KEY = 'cozy_theme_disabled'; // сохранили ключ, но тема отключена
+  const DRAFT_KEY = 'cozy_draft';
+  const STORAGE_KEY_LEGACY = 'cozy_posts_v1';
+
+  /** @type {Array<{id:string,title:string,content:string,tags:string[],created:string,updated?:string}>} */
+  let posts = [];
+
+  const byId = (id) => document.getElementById(id);
+
+  // IndexedDB minimal helpers
+  let dbPromise = null;
+  function openDB(){
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve, reject)=>{
+      const req = indexedDB.open('cozy_db', 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if(!db.objectStoreNames.contains('posts')) db.createObjectStore('posts', { keyPath: 'id' });
+        if(!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
     });
-    // Remove duplicates
-    const uniqueTargets = [...new Set(possibleTargets)];
-    if (uniqueTargets.length > 0) {
-      // Randomly decide to start a war (50% chance, for example)
-      if (Math.random() < 0.5) {
-        const targetIndex = uniqueTargets[Math.floor(Math.random() * uniqueTargets.length)];
-        // Declare war on that country
-        relations[i][targetIndex] = 'war';
-        relations[targetIndex][i] = 'war';
-        logEvent(`${ai.name} declared war on ${countries[targetIndex].name}!`);
-      }
-    }
+    return dbPromise;
   }
-
-  // 2. If at war, decide on an attack
-  let didAttack = false;
-  // If AI is at war, find any enemy provinces bordering AI provinces
-  const enemyBorders = [];
-  ai.provinces.forEach(pCode => {
-    provinceData[pCode].neighbors.forEach(nCode => {
-      const neighborOwner = provinceData[nCode].owner;
-      if (neighborOwner != null && neighborOwner !== i && relations[i][neighborOwner] === 'war') {
-        enemyBorders.push({ from:pCode, target:nCode });
-      }
-    });
-  });
-  if (enemyBorders.length > 0) {
-    // Choose one attack to attempt
-    // For simplicity, choose the one where AI has the best advantage
-    enemyBorders.sort((a, b) => {
-      return provinceData[b.from].troops - provinceData[b.target].troops - (provinceData[a.from].troops - provinceData[a.target].troops);
-    });
-    const attackChoice = enemyBorders[0];
-    const fromProv = attackChoice.from;
-    const targetProv = attackChoice.target;
-    const attackerTroops = provinceData[fromProv].troops;
-    const defenderTroops = provinceData[targetProv].troops;
-    const defenderOwnerIdx = provinceData[targetProv].owner;
-    if (attackerTroops > 0) {
-      // Decide if AI will actually attack:
-      if (attackerTroops > defenderTroops || Math.random() < 0.3) {
-        // if AI has more troops or random chance, attack
-        logEvent(`${ai.name} attacks ${countries[defenderOwnerIdx].name}'s territory ${targetProv}!`);
-        resolveCombat(i, defenderOwnerIdx, fromProv, targetProv);
-        didAttack = true;
-      }
-    }
-  }
-
-  // 3. Possibly offer peace if war has been ongoing and no progress (not deeply tracked, so we skip or do random)
-  // (For simplicity, we won't simulate AI offering peace proactively.)
-
-  // 4. End AI turn after a short delay to simulate thinking
-  setTimeout(() => {
-    maybeEndAITurn();
-  }, 500);
-}
-
-// Helper to end AI turn and move to next
-function maybeEndAITurn() {
-  // Check victory conditions after AI turn
-  if (!checkEndGame()) {
-    // Move to next turn (which will increment turnCount if wraps to player)
-    endTurn();
-    // If the next in sequence is also an AI, it will automatically process via endTurn logic
-  }
-}
-
-// Combat resolution between attacker (attCountryIdx) and defender (defCountryIdx)
-function resolveCombat(attCountryIdx, defCountryIdx, fromProvCode, targetProvCode) {
-  const attTroops = provinceData[fromProvCode].troops;
-  const defTroops = provinceData[targetProvCode].troops;
-  if (attTroops <= 0) return; // no attack possible
-  // Determine outcome
-  if (attTroops > defTroops) {
-    // Attack succeeds
-    const survivors = attTroops - defTroops;
-    // Leave at least 1 troop in origin (if more than 1 survivor)
-    let troopsToMove = survivors;
-    let remainAtOrigin = 0;
-    if (survivors > 1) {
-      remainAtOrigin = 1;
-      troopsToMove = survivors - 1;
-    }
-    logEvent(`${countries[attCountryIdx].name} captured province ${targetProvCode} from ${countries[defCountryIdx].name}!`);
-    // Update origin province troops
-    provinceData[fromProvCode].troops = remainAtOrigin;
-    // Remove target province from defender's list, add to attacker's
-    const defenderCountry = countries[defCountryIdx];
-    const attackerCountry = countries[attCountryIdx];
-    defenderCountry.provinces = defenderCountry.provinces.filter(code => code !== targetProvCode);
-    attackerCountry.provinces.push(targetProvCode);
-    // Update province owner and troops
-    provinceData[targetProvCode].owner = attCountryIdx;
-    provinceData[targetProvCode].troops = troopsToMove;
-    // If defender lost their last province, log elimination
-    if (defenderCountry.provinces.length === 0) {
-      logEvent(`${countries[defCountryIdx].name} has been eliminated!`);
-    }
-  } else {
-    // Attack fails or is a tie
-    const remainingDef = (defTroops - attTroops) > 0 ? (defTroops - attTroops) : 1;
-    logEvent(`${countries[attCountryIdx].name}'s attack on ${targetProvCode} failed. ${countries[defCountryIdx].name} held the territory.`);
-    // All attacker troops in origin are lost (they were used in attack)
-    provinceData[fromProvCode].troops = 0;
-    // Reduce defender troops in target province
-    provinceData[targetProvCode].troops = remainingDef;
-  }
-  drawMap();
-}
-
-// ---- Player Interaction Logic ----
-
-// Handle province selection and attacks on click/tap
-canvas.addEventListener('click', handleCanvasClick);
-// Also support touch (treat touchstart like click)
-canvas.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  // Determine touch position relative to canvas
-  const rect = canvas.getBoundingClientRect();
-  const touch = e.changedTouches[0];
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
-  // Compute cell coordinates (canvas is scaled in display but we can get relative position)
-  const canvasX = Math.floor(x * canvas.width / canvas.clientWidth);
-  const canvasY = Math.floor(y * canvas.height / canvas.clientHeight);
-  handleProvinceSelection(canvasX, canvasY);
-});
-
-function handleCanvasClick(e) {
-  const rect = canvas.getBoundingClientRect();
-  const cx = e.clientX - rect.left;
-  const cy = e.clientY - rect.top;
-  const canvasX = Math.floor(cx * canvas.width / canvas.clientWidth);
-  const canvasY = Math.floor(cy * canvas.height / canvas.clientHeight);
-  handleProvinceSelection(canvasX, canvasY);
-}
-
-// Determine clicked province and handle selection or attack
-function handleProvinceSelection(canvasX, canvasY) {
-  if (isAITurn()) {
-    return; // ignore clicks during AI turns
-  }
-  // Get the color of the pixel on the idCanvas to identify province
-  const pixel = idCtx.getImageData(canvasX, canvasY, 1, 1).data;
-  if (!pixel) return;
-  const [r,g,b] = pixel;
-  let clickedProv = null;
-  // Match pixel color to a province code
-  for (let code in idColors) {
-    const col = idColors[code];
-    if (col.r === r && col.g === g && col.b === b) {
-      clickedProv = code;
-      break;
-    }
-  }
-  if (!clickedProv) {
-    // Clicked water or empty area
-    selectedProvince = null;
-    selectedEnemyProvince = null;
-    updateActionButtons(); // hide all
-    drawMap();
-    return;
-  }
-  const provOwner = provinceData[clickedProv].owner;
-  if (provOwner === 0) {
-    // Clicking on player's own province
-    if (selectedProvince === clickedProv) {
-      // already selected, deselect it
-      selectedProvince = null;
-    } else {
-      selectedProvince = clickedProv;
-      selectedEnemyProvince = null;
-    }
-    updateActionButtons();
-    drawMap();
-  } else if (provOwner !== null) {
-    // Clicking on someone else's province
-    if (selectedProvince && provinceData[selectedProvince].neighbors.includes(clickedProv)) {
-      // We have a friendly province selected and clicked an adjacent province
-      const targetOwner = provOwner;
-      if (relations[0][targetOwner] === 'war') {
-        // Attack!
-        logEvent(`You attack province ${clickedProv} (${countries[targetOwner].name}) from ${selectedProvince}!`);
-        resolveCombat(0, targetOwner, selectedProvince, clickedProv);
-        // After combat, check if game ended or if that was the last enemy province, etc.
-        if (checkEndGame()) {
-          // Game ended, disable further input
-          canvas.removeEventListener('click', handleCanvasClick);
-        }
-      } else {
-        // Not at war - prompt to declare war first
-        logEvent("You must declare war on this nation before attacking.");
-      }
-      // After an attempted attack or not, deselect for now (or we might allow multiple attacks, but let's require re-selection)
-      selectedProvince = null;
-      selectedEnemyProvince = null;
-      updateActionButtons();
-      drawMap();
-    } else {
-      // No friendly province selected or clicked province not adjacent to selected
-      // So treat this as selecting an enemy/neutral province for info or diplomacy
-      selectedEnemyProvince = clickedProv;
-      selectedProvince = null;
-      updateActionButtons();
-      drawMap();
-    }
-  }
-}
-
-// Update the visibility/enabled state of action buttons based on current selection
-function updateActionButtons() {
-  const warBtn = document.getElementById('btnWar');
-  const allianceBtn = document.getElementById('btnAlliance');
-  const peaceBtn = document.getElementById('btnPeace');
-  // Hide all by default
-  warBtn.style.display = "none";
-  allianceBtn.style.display = "none";
-  peaceBtn.style.display = "none";
-  // Only allow diplomatic actions on selected enemy province
-  if (selectedEnemyProvince) {
-    const enemyOwner = provinceData[selectedEnemyProvince].owner;
-    if (enemyOwner != null && enemyOwner !== 0) {
-      const status = relations[0][enemyOwner];
-      if (status === "neutral") {
-        warBtn.style.display = "inline-block";
-        allianceBtn.style.display = "inline-block";
-        warBtn.textContent = "Declare War";
-      } else if (status === "war") {
-        peaceBtn.style.display = "inline-block";
-      } else if (status === "ally") {
-        // If allied, allow breaking alliance (declare war)
-        warBtn.style.display = "inline-block";
-        warBtn.textContent = "Break Alliance";
-      }
-    }
-  }
-}
-
-// Check if it's currently an AI's turn
-function isAITurn() {
-  return countries[currentTurn].isAI;
-}
-
-// End Turn button handler
-document.getElementById('btnEnd').addEventListener('click', () => {
-  if (isAITurn()) return;
-  // Player ending their turn:
-  // 1. Add income troops to player's provinces
-  countries[0].provinces.forEach(pCode => {
-    provinceData[pCode].troops += 1;
-  });
-  drawMap();
-  // 2. Check victory (in case player conquered everything on their turn)
-  if (checkEndGame()) return;
-  // 3. End turn and proceed to AI turns
-  endTurn();
-});
-
-// Declare War / Break Alliance button
-document.getElementById('btnWar').addEventListener('click', () => {
-  if (!selectedEnemyProvince) return;
-  const targetOwner = provinceData[selectedEnemyProvince].owner;
-  if (targetOwner == null || targetOwner === 0) return;
-  const currentStatus = relations[0][targetOwner];
-  if (currentStatus === "neutral" || currentStatus === "ally") {
-    // If neutral or allied, set to war
-    relations[0][targetOwner] = 'war';
-    relations[targetOwner][0] = 'war';
-    if (currentStatus === "ally") {
-      logEvent(`You broke the alliance and declared war on ${countries[targetOwner].name}!`);
-    } else {
-      logEvent(`You declared war on ${countries[targetOwner].name}!`);
-    }
-    updateActionButtons();
-  }
-});
-
-// Offer Alliance button
-document.getElementById('btnAlliance').addEventListener('click', () => {
-  if (!selectedEnemyProvince) return;
-  const targetOwner = provinceData[selectedEnemyProvince].owner;
-  if (targetOwner == null || targetOwner === 0) return;
-  const status = relations[0][targetOwner];
-  if (status === "neutral") {
-    // Player offers alliance; AI decision to accept
-    if (Math.random() < 0.5) {  // simple 50% chance AI accepts
-      relations[0][targetOwner] = 'ally';
-      relations[targetOwner][0] = 'ally';
-      logEvent(`${countries[targetOwner].name} accepted alliance with you.`);
-    } else {
-      logEvent(`${countries[targetOwner].name} refused your alliance proposal.`);
-      // remain neutral
-    }
-    updateActionButtons();
-  }
-});
-
-// Offer Peace button
-document.getElementById('btnPeace').addEventListener('click', () => {
-  if (!selectedEnemyProvince) return;
-  const targetOwner = provinceData[selectedEnemyProvince].owner;
-  if (targetOwner == null || targetOwner === 0) return;
-  if (relations[0][targetOwner] === 'war') {
-    // Player offers peace; if AI accepts, revert to neutral
-    if (Math.random() < 0.7) {  // AI likely accepts peace offer (70%)
-      relations[0][targetOwner] = 'neutral';
-      relations[targetOwner][0] = 'neutral';
-      logEvent(`You signed a peace treaty with ${countries[targetOwner].name}.`);
-    } else {
-      logEvent(`${countries[targetOwner].name} rejected your peace offer.`);
-    }
-    updateActionButtons();
-  }
-});
-
-// Initialize the map drawing initially
-drawMap();
-updateTurnIndicator();
-
-// At start, log initial neutral stance
-logEvent("All nations begin neutral.");
-
-// Immediately process AI turn if the player is not the first (in our setup, player is first, so not needed here)
-if (countries[currentTurn].isAI) {
-  processAITurn(currentTurn);
-}
-</script>
-
-<script>
-  // Register service worker for offline caching
-  if ('serviceWorker' in navigator) {
-    // Create a simple service worker script via Blob
-    const swCode = `
-      self.addEventListener('install', event => {
-        event.waitUntil(caches.open('pixel-strat-cache').then(cache => cache.addAll(['./'])).then(() => self.skipWaiting()));
+  async function idbGetAll(){
+    try {
+      const db = await openDB();
+      return await new Promise((resolve, reject)=>{
+        const tx = db.transaction('posts','readonly');
+        const store = tx.objectStore('posts');
+        const req = store.getAll();
+        req.onsuccess = ()=> resolve(req.result || []);
+        req.onerror = ()=> reject(req.error);
       });
-      self.addEventListener('fetch', event => {
-        event.respondWith(
-          caches.match(event.request).then(response => {
-            return response || fetch(event.request);
-          })
-        );
+    } catch { return []; }
+  }
+  async function idbPutAll(list){
+    try {
+      const db = await openDB();
+      await new Promise((resolve, reject)=>{
+        const tx = db.transaction(['posts','meta'],'readwrite');
+        const ps = tx.objectStore('posts');
+        const meta = tx.objectStore('meta');
+        const clearReq = ps.clear();
+        clearReq.onsuccess = () => {
+          list.forEach(item => ps.put(item));
+          meta.put({ key: 'updated', value: new Date().toISOString() });
+        };
+        tx.oncomplete = resolve;
+        tx.onerror = ()=> reject(tx.error);
       });
+    } catch (e) { console.warn('IDB save error', e); }
+  }
+
+  // OPFS snapshot (Chromium)
+  async function opfsSnapshot(list){
+    try {
+      if (!('storage' in navigator) || !navigator.storage.getDirectory) return;
+      const root = await navigator.storage.getDirectory();
+      const fh = await root.getFileHandle('posts.json', { create: true });
+      const w = await fh.createWritable();
+      await w.write(new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' }));
+      await w.close();
+    } catch (e) { console.info('OPFS snapshot skipped', e?.message); }
+  }
+
+  async function requestPersistence(){
+    try {
+      const persisted = await (navigator.storage?.persist?.() || Promise.resolve(false));
+      const est = await navigator.storage?.estimate?.();
+      const quota = est?.quota ? Math.round(est.quota/1024/1024) + ' МБ' : '—';
+      const used = est?.usage ? Math.round(est.usage/1024/1024) + ' МБ' : '—';
+      const note = persisted ? 'Постоянное хранение: включено' : 'Постоянное хранение: запрошено';
+      const extra = navigator.storage?.getDirectory ? ' + OPFS снапшот' : '';
+      const el = byId('persistInfo'); if (el) el.textContent = `${note} (занято ${used} из ${quota})${extra}`;
+    } catch {
+      const el = byId('persistInfo'); if (el) el.textContent = 'Хранение офлайн: активировано';
+    }
+  }
+
+  async function loadPosts(){
+    // Try IDB first; fallback to localStorage (legacy)
+    let list = await idbGetAll();
+    if (!Array.isArray(list) || list.length === 0) {
+      try { list = JSON.parse(localStorage.getItem(STORAGE_KEY_LEGACY) || '[]'); }
+      catch { list = []; }
+    }
+    posts = Array.isArray(list) ? list : [];
+  }
+
+  async function savePosts(){
+    await idbPutAll(posts);
+    // Legacy secondary backup
+    try { localStorage.setItem(STORAGE_KEY_LEGACY, JSON.stringify(posts)); } catch{}
+    // Write OPFS snapshot when available
+    opfsSnapshot(posts);
+  }
+
+  function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  function formatDate(iso) { const d = new Date(iso); return d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric'}); }
+
+  // --- Markdown lite to HTML ---
+  function mdToHtml(md) {
+    return md
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold my-2">$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code class="px-1 rounded bg-stone-100">$1</code>')
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="underline text-cozy-700">$1<\/a>')
+      .replace(/
+/g, '<br/>');
+  }
+
+  // --- Rendering ---
+  const listView = byId('listView');
+  const postView = byId('postView');
+  const searchInput = byId('search');
+  const tagRow = byId('tagRow');
+
+  function renderTags(activeTag = null) {
+    const all = new Set();
+    posts.forEach(p => p.tags.forEach(t => all.add(t)));
+    tagRow.innerHTML = '';
+    if (all.size === 0) return;
+    const makeBtn = (label, isActive) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.className = 'rounded-full px-3 py-1 text-sm border transition ' + (isActive ? 'bg-cozy-500 text-white border-cozy-600' : 'border-cozy-300 hover:bg-cozy-100');
+      b.addEventListener('click', () => renderList(label === 'Все' ? null : label));
+      return b;
+    };
+    tagRow.appendChild(makeBtn('Все', activeTag === null));
+    [...all].sort().forEach(t => tagRow.appendChild(makeBtn(t, t === activeTag)));
+  }
+
+  function renderList(filterTag = null) {
+    postView.classList.add('hidden');
+    listView.classList.remove('hidden');
+
+    const q = (searchInput.value || '').toLowerCase().trim();
+    const filtered = posts.filter(p => {
+      const okTag = filterTag ? p.tags.includes(filterTag) : true;
+      const okQ = q ? (p.title.toLowerCase().includes(q) || p.content.toLowerCase().includes(q)) : true;
+      return okTag && okQ;
+    });
+
+    listView.innerHTML = '';
+    if (filtered.length === 0) {
+      listView.innerHTML = `<div class="text-center text-stone-500 py-16 animate-fadeUp">Пока пусто. Нажмите «Новая» и согрейте пространство первой записью ☕️</div>`;
+      renderTags(filterTag);
+      return;
+    }
+
+    filtered
+      .slice()
+      .sort((a,b)=> new Date(b.created) - new Date(a.created))
+      .forEach(p => {
+        const tpl = document.getElementById('postCardTpl').content.cloneNode(true);
+        const el = tpl.querySelector('article');
+        tpl.querySelector('h3').textContent = p.title || '(без названия)';
+        tpl.querySelector('p').textContent = p.content.replace(/
+/g,' ').slice(0,160);
+        const time = tpl.querySelector('time');
+        time.textContent = formatDate(p.created);
+        const tagsWrap = tpl.querySelector('div div');
+        p.tags.forEach(t => {
+          const tag = document.createElement('span');
+          tag.textContent = t;
+          tag.className = 'rounded-full bg-cozy-100 text-stone-700 px-2 py-0.5 border border-cozy-200';
+          tagsWrap.appendChild(tag);
+        });
+        el.addEventListener('click', ()=> showPost(p.id));
+        listView.appendChild(tpl);
+      });
+
+    renderTags(filterTag);
+  }
+
+  function showPost(id) {
+    const p = posts.find(x=>x.id===id);
+    if (!p) return;
+    listView.classList.add('hidden');
+    postView.className = 'bg-white rounded-2xl border border-cozy-200 p-5 shadow-md animate-fadeUp';
+    postView.innerHTML = `
+      <div class="flex items-start gap-3">
+        <h2 class="text-2xl font-bold flex-1">${escapeHtml(p.title) || '(без названия)'}</h2>
+        <button class="rounded-xl px-3 py-1.5 border border-cozy-300 hover:bg-cozy-100" id="editBtn">Редактировать</button>
+      </div>
+      <div class="text-sm text-stone-500 mt-1">${formatDate(p.created)}${p.updated ? ' • обновлено ' + formatDate(p.updated) : ''}</div>
+      <div class="flex gap-2 mt-2">${p.tags.map(t=>`<span class='rounded-full bg-cozy-100 px-2 py-0.5 border border-cozy-200'>${escapeHtml(t)}</span>`).join('')}</div>
+      <div class="prose prose-stone mt-4">${mdToHtml(escapeHtml(p.content))}</div>
+      <div class="mt-6 flex gap-2">
+        <button id="backBtn" class="rounded-xl px-3 py-1.5 border border-cozy-300 hover:bg-cozy-100">← Назад</button>
+        <button id="deleteBtn" class="ml-auto text-red-700 hover:underline">Удалить</button>
+      </div>
     `;
-    const blob = new Blob([swCode], { type: 'application/javascript' });
-    navigator.serviceWorker.register(URL.createObjectURL(blob));
+    byId('backBtn').addEventListener('click', ()=> renderList());
+    byId('deleteBtn').addEventListener('click', ()=> {
+      if (confirm('Удалить запись безвозвратно?')) {
+        posts = posts.filter(x=>x.id!==id); savePosts(); renderList();
+      }
+    });
+    byId('editBtn').addEventListener('click', ()=> openCompose(p));
   }
-</script>
+
+  function escapeHtml(str='') {
+    return str.replace(/[&<>"'] /g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[m] || m));
+  }
+
+  // --- Compose ---
+  const compose = byId('compose');
+  const titleInput = byId('titleInput');
+  const contentInput = byId('contentInput');
+  const tagsInput = byId('tagsInput');
+  const autosaveInfo = byId('autosaveInfo');
+
+  let editingId = null;
+  let autosaveTimer = null;
+
+  function openCompose(post=null) {
+    editingId = post?.id || null;
+    const draft = post || loadDraft();
+    titleInput.value = draft?.title || '';
+    contentInput.value = draft?.content || '';
+    tagsInput.value = draft?.tags?.join(', ') || '';
+    autosaveInfo.textContent = 'Автосохранение включено';
+    compose.showModal();
+    titleInput.focus();
+  }
+
+  function closeCompose() {
+    compose.close();
+    clearTimeout(autosaveTimer);
+  }
+
+  function loadDraft() {
+    try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); }
+    catch { return null; }
+  }
+
+  function saveDraft() {
+    const draft = { title: titleInput.value, content: contentInput.value, tags: parseTags(tagsInput.value) };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    autosaveInfo.textContent = 'Черновик сохранён';
+    setTimeout(()=> autosaveInfo.textContent='Автосохранение включено', 1200);
+  }
+
+  function deleteDraft() {
+    localStorage.removeItem(DRAFT_KEY);
+    autosaveInfo.textContent = 'Черновик удалён';
+  }
+
+  function parseTags(s) { return (s || '').split(',').map(t=>t.trim()).filter(Boolean).slice(0,12); }
+
+  function publish() {
+    const data = {
+      id: editingId || uid(),
+      title: titleInput.value.trim(),
+      content: contentInput.value.trim(),
+      tags: parseTags(tagsInput.value),
+      created: new Date().toISOString()
+    };
+    if (editingId) {
+      const idx = posts.findIndex(p=>p.id===editingId);
+      if (idx>-1) {
+        data.created = posts[idx].created;
+        data.updated = new Date().toISOString();
+        posts[idx] = data;
+      }
+    } else { posts.push(data); }
+    savePosts(); deleteDraft(); closeCompose(); renderList();
+  }
+
+  // --- Export / Import / RSS / Backup ---
+  function download(filename, text, type='application/json') {
+    const blob = new Blob([text], {type});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
+  }
+  function exportJson() {
+    const name = 'cozy-posts-' + new Date().toISOString().slice(0,10) + '.json';
+    download(name, JSON.stringify(posts, null, 2));
+  }
+  function backupJson() {
+    const name = 'cozy-backup-' + new Date().toISOString().replace(/[:T]/g,'-').slice(0,19) + '.json';
+    download(name, JSON.stringify(posts, null, 2));
+  }
+  function generateRSS() {
+    const site = location.origin + location.pathname;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+<title>Тёплая Серверная</title>
+<link>${site}</link>
+<description>Уютные записи</description>
+${posts.slice().sort((a,b)=>new Date(b.created)-new Date(a.created)).map(p=>`<item>
+<title>${escapeXml(p.title)}</title>
+<link>${site}#${p.id}</link>
+<guid>${p.id}</guid>
+<pubDate>${new Date(p.created).toUTCString()}</pubDate>
+<description><![CDATA[${p.content}]]></description>
+</item>`).join('
+')}
+</channel></rss>`;
+    download('rss.xml', xml, 'application/rss+xml');
+  }
+  function escapeXml(str='') { return str.replace(/[<>&'\"]/g, c=>({"<":"&lt;",">":"&gt;","&":"&amp;","'":"&apos;","\"":"&quot;"}[c])); }
+
+  // --- Events & Shortcuts ---
+  byId('newPostBtn').addEventListener('click', ()=> openCompose());
+  byId('closeCompose').addEventListener('click', closeCompose);
+  byId('saveDraftBtn').addEventListener('click', saveDraft);
+  byId('publishBtn').addEventListener('click', publish);
+  byId('deleteDraftBtn').addEventListener('click', ()=>{ if(confirm('Удалить черновик?')) deleteDraft(); });
+  byId('homeBtn').addEventListener('click', ()=> renderList());
+  byId('aboutBtn').addEventListener('click', ()=> {
+    const demo = { title: 'Добро пожаловать!', content: 'Это ваша тёплая серверная. Пишите мысли, заметки и истории. → Кнопка **Новая** вверху. Экспортируйте JSON или RSS. Хорошего дня!
+
+# Подсказки
+- Поиск по тексту сверху (нажмите /).
+- Теги через запятую: дом, идеи.
+- Нажмите на карточку — откроется запись.
+- Всё хранится в вашем браузере (офлайн).', tags: ['привет', 'подсказки'], created: new Date().toISOString(), id: uid() };
+    posts.push(demo); savePosts(); renderList();
+    alert('Добавили приветственную запись 🙂');
+  });
+
+  byId('exportBtn').addEventListener('click', exportJson);
+  byId('backupBtn').addEventListener('click', backupJson);
+  byId('importInput').addEventListener('change', async (e)=>{
+    const file = e.target.files?.[0]; if(!file) return;
+    const text = await file.text();
+    try { const data = JSON.parse(text); if(Array.isArray(data)) { posts = data; savePosts(); renderList(); alert('Импортировано!'); } else throw 0; }
+    catch { alert('Не удалось импортировать файл. Это не список записей.'); }
+    e.target.value = '';
+  });
+  byId('rssBtn').addEventListener('click', generateRSS);
+
+  // Shortcuts
+  window.addEventListener('keydown', (e)=>{
+    if (e.key === '/' && document.activeElement !== searchInput) { e.preventDefault(); searchInput.focus(); return; }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (compose.open) saveDraft(); return; }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); if (compose.open) publish(); return; }
+    if (e.key.toLowerCase() === 'n' && !compose.open) { openCompose(); return; }
+  });
+
+  // Autosave draft while typing
+  ;['input','change'].forEach(evt=>{
+    ;['titleInput','contentInput','tagsInput'].forEach(id=> byId(id).addEventListener(evt, ()=>{
+      clearTimeout(autosaveTimer); autosaveTimer = setTimeout(saveDraft, 800);
+    }));
+  });
+
+  // Init
+  (async function init(){
+    await requestPersistence();
+    await loadPosts();
+    renderList();
+  })();
+  </script>
 </body>
 </html>
